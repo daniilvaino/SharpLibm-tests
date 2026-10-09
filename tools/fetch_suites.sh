@@ -3,6 +3,9 @@
 # sparse checkouts (only the test directories) for the large ones. Each suite
 # keeps its own licence file; nothing here is redistributed by this repository.
 cd "$(dirname "$0")/.." && mkdir -p suites && cd suites
+# Git Bash (MSYS) rewrites arguments that look like absolute paths ('/libc/test/' →
+# 'C:/Program Files/Git/libc/test/'), which broke the sparse patterns.
+export MSYS_NO_PATHCONV=1
 
 full() {   # full <name> <url>
   [ -d "$1" ] || git clone -q --depth 1 "$2" "$1" || echo "FAILED $1"
@@ -13,8 +16,9 @@ sparse() { # sparse <name> <url> <dir>...
   local name=$1 url=$2; shift 2
   if [ ! -d "$name" ]; then
     git clone -q --depth 1 --filter=blob:none --sparse "$url" "$name" || { echo "FAILED $name"; return; }
-    git -C "$name" sparse-checkout set --no-cone "$@" || echo "FAILED sparse $name"
   fi
+  # Set every time: repairs checkouts made with mangled patterns, cheap when unchanged.
+  git -C "$name" sparse-checkout set --no-cone "$@" || echo "FAILED sparse $name"
   echo "$name $(git -C "$name" log -1 --format='%h %cs' 2>/dev/null) $url [$*]"
 }
 
@@ -26,6 +30,7 @@ full libc-test          https://github.com/kraj/libc-test
 full core-math          https://gitlab.inria.fr/core-math/core-math.git
 full math_accuracy      https://gitlab.inria.fr/zimmerma/math_accuracy.git
 full berkeley-testfloat-3 https://github.com/ucb-bar/berkeley-testfloat-3
+full berkeley-softfloat-3 https://github.com/ucb-bar/berkeley-softfloat-3   # TestFloat's reference; tools/testfloat_gen.sh
 sparse optimized-routines https://github.com/ARM-software/optimized-routines '/math/test/' '/LICENSE' '/README*'
 sparse compiler-builtins  https://github.com/rust-lang/compiler-builtins '/libm-test/' '/libm/' '/LICENSE*' '/CONTRIBUTING.md'
 sparse go                 https://github.com/golang/go '/src/math/*_test.go' '/LICENSE'

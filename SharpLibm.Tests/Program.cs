@@ -19,6 +19,14 @@ namespace SharpLibm.Tests
                 return WorstCases.Run(Path.Combine(args[0], "wc-ref"), args[2..]) == 0 ? 0 : 1;
             if (args.Length > 2 && args[1] == "--f32")      // --f32 <CORE-MATH binary32 dll> [function ...]
                 return Exhaustive32.Run(args[2], args[3..]) == 0 ? 0 : 1;
+            if (args.Length > 1 && args[1] == "--glibc")    // --glibc [function ...]
+                return GlibcTest.Run(Path.Combine(args[0], "glibc"), args[2..]) == 0 ? 0 : 1;
+            if (args.Length > 1 && args[1] == "--testfloat")    // --testfloat [file prefix ...], e.g. f64_mulAdd
+                return TestFloat.Run(Path.Combine(args[0], "testfloat-vec"), args[2..]) == 0 ? 0 : 1;
+            if (args.Length > 1 && args[1] == "--llvm")     // --llvm [function ...]
+                return LlvmVectors.Run(Path.Combine(args[0], "llvm-vec", "llvm.txt"), args[2..]) == 0 ? 0 : 1;
+            if (args.Length > 1 && args[1] == "--special")      // --special [function ...]: Bessel, erfinv in ulp against MPFR
+                return SpecialFunctions.Run(Path.Combine(args[0], "special-ref"), args[2..]) == 0 ? 0 : 1;
             string math = Path.Combine(args[0], "libc-test", "src", "math");
             if (!Directory.Exists(math))
             {
@@ -37,6 +45,15 @@ namespace SharpLibm.Tests
 
             Console.WriteLine("CORE-MATH worst cases (.wc) against MPFR, bit for bit:");
             s_failedFunctions += WorstCases.Run(Path.Combine(args[0], "wc-ref"));
+
+            Console.WriteLine("Bessel, erfinv (not correctly rounded) against MPFR, error in ulp:");
+            s_failedFunctions += SpecialFunctions.Run(Path.Combine(args[0], "special-ref"));
+
+            Console.WriteLine("glibc libm-test (auto-libm-test-out, libm-test-*.inc), bit for bit:");
+            s_failedFunctions += GlibcTest.Run(Path.Combine(args[0], "glibc"));
+
+            Console.WriteLine("LLVM libc math tests (explicit values; MPFR for listed inputs), bit for bit:");
+            s_failedFunctions += LlvmVectors.Run(Path.Combine(args[0], "llvm-vec", "llvm.txt"));
 
             Console.WriteLine(s_failedFunctions == 0 ? "all passed" : s_failedFunctions + " function(s) failed");
             return s_failedFunctions == 0 ? 0 : 1;
