@@ -55,3 +55,10 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Cloned suites and generated references: rebuilt by tools/ (see README).
+/suites/
+/build/
+/.venv/
+bin/
+obj/
